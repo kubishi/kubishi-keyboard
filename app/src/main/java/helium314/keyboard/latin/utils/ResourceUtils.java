@@ -32,7 +32,11 @@ public final class ResourceUtils {
     }
 
     public static int getKeyboardWidth(final Context ctx, final SettingsValues settingsValues) {
-        final int defaultKeyboardWidth = getDefaultKeyboardWidth(ctx);
+        // Floating keyboard width takes priority
+        int defaultKeyboardWidth = getDefaultKeyboardWidth(ctx);
+        if (settingsValues.mIsFloatingKeyboard) {
+            return settingsValues.mFloatingWidth;
+        }
         if (settingsValues.mOneHandedModeEnabled) {
             return (int) (settingsValues.mOneHandedModeScale * defaultKeyboardWidth);
         }
@@ -64,9 +68,11 @@ public final class ResourceUtils {
         return keyboardHeight;
     }
 
-    public static int getKeyboardHeight(final Resources res, final SettingsValues settingsValues) {
-        final int defaultKeyboardHeight = getDefaultKeyboardHeight(res, settingsValues.mShowsNumberRow);
-        // mKeyboardHeightScale Ranges from [.5,1.5], from xml/prefs_screen_appearance.xml
+    public static int getKeyboardHeight(Resources res, SettingsValues settingsValues) {
+        int defaultKeyboardHeight = getDefaultKeyboardHeight(res, settingsValues.mShowsNumberRow);
+        if (settingsValues.mIsFloatingKeyboard) {
+            return settingsValues.mFloatingHeight;
+        }
         return (int)(defaultKeyboardHeight * settingsValues.mKeyboardHeightScale);
     }
 

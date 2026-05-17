@@ -702,6 +702,7 @@ public class LatinIME extends InputMethodService implements
         super.onDestroy();
         mHandler.removeCallbacksAndMessages(null);
         deallocateMemory();
+        mKeyboardSwitcher.onDestroy();
     }
 
     private boolean isImeSuppressedByHardwareKeyboard() {
@@ -753,8 +754,13 @@ public class LatinIME extends InputMethodService implements
     }
 
     @Override
-    public void setInputView(final View view) {
+    public void setInputView(View view) {
         super.setInputView(view);
+        setFloatingInputView(view);
+    }
+
+    // same as setInputView for internal stuff, but we don't want to set the floating view for InputMethodService
+    public void setFloatingInputView(View view) {
         mInputView = view;
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
@@ -999,6 +1005,7 @@ public class LatinIME extends InputMethodService implements
     public void onWindowShown() {
         super.onWindowShown();
         if (isInputViewShown()) {
+            mKeyboardSwitcher.onWindowShown();
             setNavigationBarColor();
             workaroundForHuaweiStatusBarIssue();
         }
@@ -1193,6 +1200,8 @@ public class LatinIME extends InputMethodService implements
         }
         final int stripHeight = mKeyboardSwitcher.isShowingStripContainer() ? mKeyboardSwitcher.getStripContainer().getHeight() : 0;
         int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight;
+        if (Settings.getValues().mIsFloatingKeyboard)
+            visibleTopY = getResources().getDisplayMetrics().heightPixels;
 
         if (hasSuggestionStripView()) {
             mSuggestionStripView.setMoreSuggestionsHeight(visibleTopY);
@@ -1251,7 +1260,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public boolean onEvaluateFullscreenMode() {
-        if (isImeSuppressedByHardwareKeyboard()) {
+        if (isImeSuppressedByHardwareKeyboard() || mSettings.getCurrent().mIsFloatingKeyboard) {
             // If there is a hardware keyboard, disable full screen mode.
             return false;
         }

@@ -83,6 +83,7 @@ public final class KeyboardId {
     public final boolean mHasShortcutKey;
     public final boolean mIsSplitLayout;
     public final boolean mOneHandedModeEnabled;
+    public final boolean mFloatingKeyboardEnabled;
     public final KeyboardLayoutSet.InternalAction mInternalAction;
     public final boolean mEmojiSearchAvailable;
 
@@ -107,6 +108,7 @@ public final class KeyboardId {
         mOneHandedModeEnabled = params.mOneHandedModeEnabled;
         mInternalAction = params.mInternalAction;
         mEmojiSearchAvailable = params.mEmojiSearchAvailable;
+        mFloatingKeyboardEnabled = params.mFloatingKeyboardEnabled;
 
         mHashCode = computeHashCode(this);
     }
@@ -121,6 +123,7 @@ public final class KeyboardId {
                 id.mDeviceLocked,
                 id.mHasShortcutKey,
                 id.mNumberRowEnabled,
+                id.mNumberRowInSymbols,
                 id.mLanguageSwitchKeyEnabled,
                 id.mEmojiKeyEnabled,
                 id.isMultiLine(),
@@ -130,7 +133,10 @@ public final class KeyboardId {
                 id.navigatePrevious(),
                 id.mSubtype,
                 id.mIsSplitLayout,
-                id.mInternalAction
+                id.mInternalAction,
+                id.mEmojiSearchAvailable,
+                id.mOneHandedModeEnabled,
+                id.mFloatingKeyboardEnabled,
         });
     }
 
@@ -154,7 +160,10 @@ public final class KeyboardId {
                 && other.navigatePrevious() == navigatePrevious()
                 && other.mSubtype.equals(mSubtype)
                 && other.mIsSplitLayout == mIsSplitLayout
-                && Objects.equals(other.mInternalAction, mInternalAction);
+                && Objects.equals(other.mInternalAction, mInternalAction)
+                && other.mEmojiSearchAvailable == mEmojiSearchAvailable
+                && other.mOneHandedModeEnabled == mOneHandedModeEnabled
+                && other.mFloatingKeyboardEnabled == mFloatingKeyboardEnabled;
     }
 
     private static boolean isAlphabetKeyboard(final int elementId) {

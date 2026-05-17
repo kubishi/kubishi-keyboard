@@ -12,6 +12,7 @@ import helium314.keyboard.latin.common.Constants
 import helium314.keyboard.latin.define.DebugFlags
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.CapsModeUtils
+import helium314.keyboard.latin.utils.DebugLogUtils
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.RecapitalizeMode
 
@@ -49,6 +50,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
 
         fun setOneHandedModeEnabled(enabled: Boolean)
         fun switchOneHandedMode()
+        fun setFloatingKeyboardEnabled(enabled: Boolean)
 
         companion object {
             const val DEBUG_ACTION = false
@@ -109,6 +111,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
             setAlphabetKeyboard(autoCapsFlags, recapitalizeMode)
         }
         switchActions.setOneHandedModeEnabled(onHandedModeEnabled)
+        switchActions.setFloatingKeyboardEnabled(Settings.getValues().mIsFloatingKeyboard)
     }
 
     fun onSaveKeyboardState() {
@@ -666,6 +669,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
             KeyCode.SYMBOL -> setSymbolsKeyboard()
             KeyCode.TOGGLE_ONE_HANDED_MODE -> setOneHandedModeEnabled(!Settings.getValues().mOneHandedModeEnabled)
             KeyCode.SWITCH_ONE_HANDED_MODE -> switchOneHandedMode()
+            KeyCode.TOGGLE_FLOATING_KEYBOARD -> switchActions.setFloatingKeyboardEnabled(!Settings.getValues().mIsFloatingKeyboard) // todo: more similar to one-handed mode
         }
     }
 
