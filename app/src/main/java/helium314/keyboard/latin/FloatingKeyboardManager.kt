@@ -29,11 +29,9 @@ import helium314.keyboard.latin.utils.prefs
 
 // influenced by LeanType FloatingKeyboardManager, but actually quite different
 
-// todo: improvements
-//  improve scale (for keys it only depends on height, so a very high keyboard will be ugly)
+// todo: improvements for later
 //  add a frame around the keyboard
 //  (dynamic) floating gesture preview is only available within the keyboard edges
-//  scale the suggestion strip?
 class FloatingKeyboardManager {
     private val TAG = this::class.java.simpleName
     val isFloating get() = floatingContainer != null
