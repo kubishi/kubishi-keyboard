@@ -359,20 +359,6 @@ class KeyboardState(private val switchActions: SwitchActions) {
         if (withSliding) switchState = SwitchState.MOMENTARY_FROM_NUMPAD
     }
 
-    private fun setOneHandedModeEnabled(enabled: Boolean) {
-        if (DebugFlags.DEBUG_ENABLED) {
-            Log.d(TAG, "setOneHandedModeEnabled")
-        }
-        switchActions.setOneHandedModeEnabled(enabled)
-    }
-
-    private fun switchOneHandedMode() {
-        if (DebugFlags.DEBUG_ENABLED) {
-            Log.d(TAG, "switchOneHandedMode")
-        }
-        switchActions.switchOneHandedMode()
-    }
-
     fun onPressKey(code: Int, isSinglePointer: Boolean, autoCapsFlags: Int, recapitalizeMode: RecapitalizeMode?) {
         if (DEBUG_EVENT) {
             Log.d(TAG, ("onPressKey: code=${Constants.printableCode(code)} single=$isSinglePointer ${stateToString(autoCapsFlags, recapitalizeMode)}"))
@@ -667,9 +653,9 @@ class KeyboardState(private val switchActions: SwitchActions) {
             KeyCode.CLIPBOARD -> if (Settings.getValues().mClipboardHistoryEnabled) setClipboardKeyboard()
             KeyCode.NUMPAD -> toggleNumpad(false, autoCapsFlags, recapitalizeMode, false, true)
             KeyCode.SYMBOL -> setSymbolsKeyboard()
-            KeyCode.TOGGLE_ONE_HANDED_MODE -> setOneHandedModeEnabled(!Settings.getValues().mOneHandedModeEnabled)
-            KeyCode.SWITCH_ONE_HANDED_MODE -> switchOneHandedMode()
-            KeyCode.TOGGLE_FLOATING_KEYBOARD -> switchActions.setFloatingKeyboardEnabled(!Settings.getValues().mIsFloatingKeyboard) // todo: more similar to one-handed mode
+            KeyCode.TOGGLE_ONE_HANDED_MODE -> switchActions.setOneHandedModeEnabled(!Settings.getValues().mOneHandedModeEnabled)
+            KeyCode.SWITCH_ONE_HANDED_MODE -> switchActions.switchOneHandedMode()
+            KeyCode.TOGGLE_FLOATING_KEYBOARD -> switchActions.setFloatingKeyboardEnabled(!Settings.getValues().mIsFloatingKeyboard)
         }
     }
 

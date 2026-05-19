@@ -560,7 +560,6 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
             mCurrentOrientation == Configuration.ORIENTATION_LANDSCAPE,
             FoldableUtils.INSTANCE.isFolded()
         );
-
         setOneHandedModeEnabled(settings.getCurrent().mOneHandedModeEnabled, true);
         reloadKeyboard();
     }
