@@ -546,6 +546,7 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
             mLatinIME.setFloatingInputView(mCurrentInputView);
             reloadKeyboard();
         } else {
+            SettingsKt.setFloatingKeyboardEnabled(mThemeContext, false); // in case enabling failed
             mFloatingKeyboardManager.disableFloating();
             setThemeNeedsReload(); // reloadKeyboard does not do what we need, even if we transfer the view back and use setInputView
         }

@@ -69,7 +69,7 @@ class FloatingKeyboardManager {
         containerRoot?.isVisible = true
         if (!isFloating)
             floatingContainer = FloatContainerBinding.inflate(LayoutInflater.from(context))
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val wm = context.windowManager()
         try {
             if (containerRoot?.parent == null)
                 wm.addView(containerRoot, windowParams)
@@ -101,7 +101,7 @@ class FloatingKeyboardManager {
     fun updateView(viewToFloat: View) {
         Log.d(TAG, "update $containerRoot")
         viewToFloat.doOnAttach {
-            disableFloating() // todo: this makes the keyboard flash on things that need keyboard reload, but gesture trail and popups are messed up otherwise
+            disableFloating() // todo: this makes the keyboard flash on things that need keyboard reload, but gesture trail and popups are messed up otherwise (added in MainKeyboardView.installPreviewPlacerView)
             Log.d(TAG, "attach $containerRoot")
             (it.parent as? ViewGroup)?.removeView(it)
             enableFloating(viewToFloat)
@@ -111,7 +111,7 @@ class FloatingKeyboardManager {
     fun disableFloating() {
         val container = floatingContainer ?: return
         container.content.removeAllViews()
-        (container.root.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).removeView(container.root)
+        container.root.context.windowManager().removeView(container.root)
         floatingContainer = null
     }
 
@@ -234,4 +234,9 @@ class FloatingKeyboardManager {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
+
+    private fun Context.windowManager() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null)
+            .getSystemService(WindowManager::class.java)
+        else getSystemService(Context.WINDOW_SERVICE) as WindowManager
 }
