@@ -85,7 +85,7 @@ public final class KeyboardCodesSet {
         KeyCode.TOGGLE_ONE_HANDED_MODE,
         KeyCode.SWITCH_ONE_HANDED_MODE,
         KeyCode.EMOJI_SEARCH,
-        KeyCode.TOGGLE_FLOATING_KEYBOARD,
+        KeyCode.TOGGLE_FLOATING_WINDOW,
     };
 
     static {

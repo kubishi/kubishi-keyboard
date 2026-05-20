@@ -655,7 +655,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
             KeyCode.SYMBOL -> setSymbolsKeyboard()
             KeyCode.TOGGLE_ONE_HANDED_MODE -> switchActions.setOneHandedModeEnabled(!Settings.getValues().mOneHandedModeEnabled)
             KeyCode.SWITCH_ONE_HANDED_MODE -> switchActions.switchOneHandedMode()
-            KeyCode.TOGGLE_FLOATING_KEYBOARD -> {
+            KeyCode.TOGGLE_FLOATING_WINDOW -> {
                 switchActions.setFloatingKeyboardEnabled(!Settings.getValues().mIsFloatingKeyboard)
                 KeyboardSwitcher.getInstance().reloadKeyboard()
             }
