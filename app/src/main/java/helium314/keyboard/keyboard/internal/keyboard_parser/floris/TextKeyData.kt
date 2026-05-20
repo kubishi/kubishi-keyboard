@@ -101,7 +101,7 @@ sealed interface KeyData : AbstractKeyData {
                 keys.add("!icon/emoji_normal_key|!code/key_emoji")
             if (!params.mId.mLanguageSwitchKeyEnabled && !params.mId.isNumberLayout && RichInputMethodManager.canSwitchLanguage())
                 keys.add("!icon/language_switch_key|!code/key_language_switch")
-            if (!params.mId.mOneHandedModeEnabled && !params.mId.mFloatingKeyboardEnabled)
+            if (!params.mId.mOneHandedModeEnabled && !Settings.getValues().mIsFloatingKeyboard)
                 keys.add("!icon/start_onehanded_mode_key|!code/key_toggle_onehanded")
             if (!params.mId.mDeviceLocked)
                 keys.add("!icon/toggle_floating|!code/toggle_floating")

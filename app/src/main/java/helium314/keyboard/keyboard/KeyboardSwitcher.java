@@ -530,7 +530,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
 
     @Override
     public void setFloatingKeyboardEnabled(boolean enabled) {
-        SettingsKt.setFloatingKeyboardEnabled(mThemeContext, enabled);
+        if (enabled != Settings.getValues().mIsFloatingKeyboard)
+            SettingsKt.setFloatingKeyboardEnabled(mThemeContext, enabled);
         if (enabled) FloatingKeyboardManager.INSTANCE.setFloating(mCurrentInputView);
         else {
             FloatingKeyboardManager.INSTANCE.disableFloating(mCurrentInputView);
