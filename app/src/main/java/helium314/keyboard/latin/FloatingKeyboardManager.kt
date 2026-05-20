@@ -63,8 +63,6 @@ class FloatingKeyboardManager {
         windowParams.x = x
         windowParams.y = y
         windowParams.width = Settings.getValues().mFloatingWidth
-        windowParams.height = Settings.getValues().mFloatingHeight + (30.dpToPx(context.resources)) + (if (Settings.getValues().mToolbarMode == ToolbarMode.HIDDEN) 0
-        else context.resources.getDimension(R.dimen.config_suggestions_strip_height).toInt())
         try {
             context.windowManager().updateViewLayout(containerRoot, windowParams)
         } catch (e: Exception) {
