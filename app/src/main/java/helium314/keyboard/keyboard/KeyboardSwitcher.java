@@ -35,7 +35,7 @@ import helium314.keyboard.keyboard.clipboard.ClipboardHistoryView;
 import helium314.keyboard.keyboard.emoji.EmojiPalettesView;
 import helium314.keyboard.keyboard.internal.KeyboardState;
 import helium314.keyboard.keyboard.internal.keyboard_parser.EmojiParserKt;
-import helium314.keyboard.latin.FloatingKeyboardManager;
+import helium314.keyboard.latin.utils.FloatingKeyboardUtils;
 import helium314.keyboard.latin.InputView;
 import helium314.keyboard.latin.KeyboardWrapperView;
 import helium314.keyboard.latin.LatinIME;
@@ -533,8 +533,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         if (enabled != Settings.getValues().mIsFloatingKeyboard)
             // mIsFloatingKeyboard is always disabled when device is locked, and we shouldn't mess up the setting
             SettingsKt.setFloatingKeyboardEnabled(mThemeContext, enabled);
-        if (enabled) FloatingKeyboardManager.INSTANCE.setFloating(mCurrentInputView);
-        else FloatingKeyboardManager.INSTANCE.disableFloating(mCurrentInputView);
+        if (enabled) FloatingKeyboardUtils.setFloating(mCurrentInputView);
+        else FloatingKeyboardUtils.disableFloating(mCurrentInputView);
     }
 
     public void toggleSplitKeyboardMode() {
