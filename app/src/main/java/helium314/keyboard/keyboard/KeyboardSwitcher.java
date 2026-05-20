@@ -515,8 +515,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         mKeyboardViewWrapper.setOneHandedModeEnabled(enabled);
         mKeyboardViewWrapper.setOneHandedGravity(settings.getCurrent().mOneHandedModeGravity);
 
-        // oneHandeMode is always disabled for floating, and toggleSplitKeyboardMode should not mess up the setting
-        if (!settings.getCurrent().mIsFloatingKeyboard)
+        // oneHandeMode is always disabled when floating, and we shouldn't mess up the setting
+        if (enabled != settings.getCurrent().mOneHandedModeEnabled)
             settings.writeOneHandedModeEnabled(enabled);
         reloadKeyboard();
     }
@@ -531,12 +531,10 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
     @Override
     public void setFloatingKeyboardEnabled(boolean enabled) {
         if (enabled != Settings.getValues().mIsFloatingKeyboard)
+            // mIsFloatingKeyboard is always disabled when device is locked, and we shouldn't mess up the setting
             SettingsKt.setFloatingKeyboardEnabled(mThemeContext, enabled);
         if (enabled) FloatingKeyboardManager.INSTANCE.setFloating(mCurrentInputView);
-        else {
-            FloatingKeyboardManager.INSTANCE.disableFloating(mCurrentInputView);
-            KtxKt.updateSoftInputWindowLayoutParameters(mLatinIME, mCurrentInputView);
-        }
+        else FloatingKeyboardManager.INSTANCE.disableFloating(mCurrentInputView);
     }
 
     public void toggleSplitKeyboardMode() {

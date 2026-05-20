@@ -45,7 +45,7 @@ object FloatingKeyboardManager {
 
     fun disableFloating(view: View) {
         val lp = view.layoutParams ?: ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        lp.height = ViewGroup.LayoutParams.MATCH_PARENT
         lp.width = ViewGroup.LayoutParams.MATCH_PARENT
         (lp as? ViewGroup.MarginLayoutParams)?.let {
             it.topMargin = 0

@@ -754,7 +754,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     @Override
-    public void setInputView(View view) {
+    public void setInputView(final View view) {
         super.setInputView(view);
         mInputView = view;
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
@@ -1262,7 +1262,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public boolean onEvaluateFullscreenMode() {
         if (isImeSuppressedByHardwareKeyboard() || mSettings.getCurrent().mIsFloatingKeyboard) {
-            // If there is a hardware keyboard, disable full screen mode.
+            // If there is a hardware keyboard or we're floating, disable full screen mode.
             return false;
         }
         // Reread resource value here, because this method is called by the framework as needed.
