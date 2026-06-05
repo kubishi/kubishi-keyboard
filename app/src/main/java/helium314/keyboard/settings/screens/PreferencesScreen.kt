@@ -78,7 +78,9 @@ fun PreferencesScreen(
         R.string.settings_category_clipboard_history,
         Settings.PREF_ENABLE_CLIPBOARD_HISTORY,
         if (clipboardHistoryEnabled) Settings.PREF_CLIPBOARD_HISTORY_RETENTION_TIME else null,
-        if (clipboardHistoryEnabled) Settings.PREF_CLIPBOARD_HISTORY_PINNED_FIRST else null
+        if (clipboardHistoryEnabled) Settings.PREF_CLIPBOARD_HISTORY_PINNED_FIRST else null,
+        if (clipboardHistoryEnabled) Settings.PREF_CLIPBOARD_FILES else null,
+        if (clipboardHistoryEnabled) Settings.PREF_CLIPBOARD_FILES_SIZE else null,
     )
     SearchSettingsScreen(
         onClickBack = onClickBack,
@@ -182,6 +184,22 @@ fun createPreferencesSettings(context: Context) = listOf(
     },
     Setting(context, Settings.PREF_CLIPBOARD_HISTORY_PINNED_FIRST, R.string.clipboard_history_pinned_first) {
         SwitchPreference(it, Defaults.PREF_CLIPBOARD_HISTORY_PINNED_FIRST)
+    },
+    Setting(context, Settings.PREF_CLIPBOARD_FILES, R.string.clipboard_history_f) {
+        SwitchPreference(it, Defaults.PREF_CLIPBOARD_FILES)
+    },
+    Setting(context, Settings.PREF_CLIPBOARD_FILES_SIZE, R.string.clipboard_history_fs) { setting ->
+        val ctx = LocalContext.current
+        SliderPreference(
+            name = setting.title,
+            key = setting.key,
+            default = Defaults.PREF_CLIPBOARD_FILES_SIZE,
+            description = {
+                if (it > 1000) stringResource(R.string.settings_no_limit)
+                else stringResource(R.string.abbreviation_unit_mb, it.toString())
+            },
+            range = 1f..1001f,
+        ) { ClipboardDao.getInstance(ctx)?.cleanupFiles(true) }
     },
     Setting(context, Settings.PREF_VIBRATION_DURATION_SETTINGS, R.string.prefs_keypress_vibration_duration_settings) { setting ->
         SliderPreference(

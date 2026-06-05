@@ -2,25 +2,39 @@
 
 package helium314.keyboard.latin
 
+import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.text.InputType
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import androidx.core.view.inputmethod.InputContentInfoCompat
 import androidx.core.view.isGone
 import helium314.keyboard.keyboard.KeyboardTypeface
 import helium314.keyboard.compat.ClipboardManagerCompat
+import helium314.keyboard.event.Event
 import helium314.keyboard.event.HapticEvent
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
 import helium314.keyboard.latin.common.ColorType
+import helium314.keyboard.latin.common.Constants
 import helium314.keyboard.latin.common.isValidNumber
 import helium314.keyboard.latin.database.ClipboardDao
 import helium314.keyboard.latin.databinding.ClipboardSuggestionBinding
+import helium314.keyboard.latin.settings.Defaults
+import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.InputTypeUtils
+import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.ToolbarKey
+import helium314.keyboard.latin.utils.prefs
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ClipboardHistoryManager(
         private val latinIME: LatinIME
@@ -29,6 +43,7 @@ class ClipboardHistoryManager(
     private lateinit var clipboardManager: ClipboardManager
     private var clipboardSuggestionView: View? = null
     private var clipboardDao: ClipboardDao? = null
+    private var tempPrimaryClip = false
 
     fun onCreate() {
         clipboardManager = latinIME.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -50,14 +65,65 @@ class ClipboardHistoryManager(
         }
     }
 
+    // todo for later
+    //  setting whether to store sensitive clip data?
+    //  care about other clip items than first?
     private fun fetchPrimaryClip() {
+        if (tempPrimaryClip) return // avoid updating history
         val clipData = clipboardManager.primaryClip ?: return
-        if (clipData.itemCount == 0 || clipData.description?.hasMimeType("text/*") == false) return
-        clipData.getItemAt(0)?.let { clipItem ->
-            val timeStamp = ClipboardManagerCompat.getClipTimestamp(clipData)
+        if (clipData.itemCount == 0) return
+        val clipItem = clipData.getItemAt(0) ?: return
+        val description = clipData.description ?: return
+        val timeStamp = ClipboardManagerCompat.getClipTimestamp(clipData)
+
+        // todo
+        //  test backup / restore
+        //  inline clip with view (PR 2312)
+        if (description.hasMimeType("text/*")) {
             val content = clipItem.coerceToText(latinIME)
             if (TextUtils.isEmpty(content)) return
             clipboardDao?.addClip(timeStamp, false, content.toString())
+        } else if (maySaveFromUri(clipItem.uri, latinIME)) {
+            clipboardDao?.addClipUri(timeStamp, false, clipItem.uri, description, latinIME)
+        }
+    }
+
+    // fallback method because in some apps we cannot commitContent, but KeyEvent.KEYCODE_PASTE works fine (if the content is the primary clip)
+    // actually we do change the primary clip, but (try to) revert immediately
+    fun pasteWithoutChangingClips(content: InputContentInfoCompat) {
+        Log.d(TAG, "Committing content did not work, trying fallback via system clipboard")
+        val primaryClip = clipboardManager.primaryClip
+        val tempClip = ClipData(content.description, ClipData.Item(content.contentUri))
+        tempPrimaryClip = true
+        clipboardManager.setPrimaryClip(tempClip)
+        latinIME.onEvent(Event.createSoftwareKeypressEvent(KeyCode.CLIPBOARD_PASTE, 0,
+            Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false))
+        tempPrimaryClip = false
+        if (primaryClip == null)
+            return
+        // we need to wait a little before switching back to the original primary clip
+        // a. it can happen that we switch back before the pasting has started, in that case we only past the primary clip
+        // b. if we switch while the clip is pasted, it might crash the app (tested with joplin and logseq)
+        GlobalScope.launch {
+            delay(500)
+            try {
+                clipboardManager.setPrimaryClip(primaryClip)
+            } catch (e: Exception) {
+                Log.i(TAG, "could not go back to old primary clip", e)
+                // happens wen the clip was a file
+                // try to find it in out clipboard entries
+                val clip = clipboardDao?.getAll()?.firstOrNull { it.timeStamp == ClipboardManagerCompat.getClipTimestamp(primaryClip) }
+                if (clip?.filename != null)
+                    clipboardManager.setPrimaryClip(ClipData(
+                        ClipDescription(clip.text, clip.mimeTypes?.toTypedArray()),
+                        ClipData.Item(clip.getContentUri(latinIME))
+                    ))
+                else if (clip != null)
+                    clipboardManager.setPrimaryClip(ClipData(
+                        ClipDescription("", arrayOf("text/*")),
+                        ClipData.Item(clip.text)
+                    ))
+            }
         }
     }
 
@@ -96,12 +162,6 @@ class ClipboardHistoryManager(
         clipboardDao?.listener = listener
     }
 
-    fun retrieveClipboardContent(): CharSequence {
-        val clipData = clipboardManager.primaryClip ?: return ""
-        if (clipData.itemCount == 0) return ""
-        return clipData.getItemAt(0)?.coerceToText(latinIME) ?: ""
-    }
-
     private fun isClipSensitive(inputType: Int): Boolean {
         ClipboardManagerCompat.getClipSensitivity(clipboardManager.primaryClip?.description)?.let { return it }
         return InputTypeUtils.isPasswordInputType(inputType)
@@ -111,6 +171,7 @@ class ClipboardHistoryManager(
         // maybe no need to create a new view
         // but a cache has to consider a few possible changes, so better don't implement without need
         clipboardSuggestionView = null
+        Log.e("clipboard", "something")
 
         // get the content, or return null
         if (!latinIME.mSettings.current.mSuggestClipboardContent) return null
@@ -130,8 +191,7 @@ class ClipboardHistoryManager(
         val binding = ClipboardSuggestionBinding.inflate(LayoutInflater.from(latinIME), parent, false)
         val textView = binding.clipboardSuggestionText
         KeyboardTypeface.applyToTextView(textView)
-        textView.text = (if (isClipSensitive(inputType)) "*".repeat(content.length) else content)
-            .take(200) // truncate displayed text for performance reasons
+        textView.text = (if (isClipSensitive(inputType)) "*".repeat(content.length.coerceAtMost(200)) else content)
         val clipIcon = latinIME.mKeyboardSwitcher.keyboard.mIconsSet.getIconDrawable(ToolbarKey.PASTE.name.lowercase())
         textView.setCompoundDrawablesRelativeWithIntrinsicBounds(clipIcon, null, null, null)
         textView.setOnClickListener {
@@ -166,7 +226,24 @@ class ClipboardHistoryManager(
     }
 
     companion object {
+        private val TAG = "ClipboardHistoryManager"
         private var dontShowCurrentSuggestion: Boolean = false
         const val RECENT_TIME_MILLIS = 3 * 60 * 1000L // 3 minutes (for clipboard suggestions)
+
+        private fun maySaveFromUri(uri: Uri?, context: Context): Boolean {
+            val maxSize = context.prefs().getInt(Settings.PREF_CLIPBOARD_FILES_SIZE, Defaults.PREF_CLIPBOARD_FILES_SIZE)
+            val saveUriData = context.prefs().getBoolean(Settings.PREF_CLIPBOARD_FILES, Defaults.PREF_CLIPBOARD_FILES)
+            if (uri == null || !saveUriData) return false
+            try {
+                val cursor = context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null)
+                if (cursor?.moveToFirst() != true) return false
+                val size = cursor.getLong(0)
+                return size <= maxSize
+            } catch (e: Exception) {
+                Log.w(TAG, "error checking clip size", e)
+                // happens with SecurityException: Permission Denial, so returning true doesn't make sense
+                return false
+            }
+        }
     }
 }

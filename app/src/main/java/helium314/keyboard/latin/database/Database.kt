@@ -19,11 +19,15 @@ class Database private constructor(context: Context, name: String = NAME) : SQLi
         if (oldVersion <= 1) {
             db.execSQL(GestureDataDao.CREATE_TABLE)
         }
+        if (oldVersion <= 2) {
+            db.execSQL(ClipboardDao.ADD_FILE_COLUMN)
+            db.execSQL(ClipboardDao.ADD_MIME_TYPE_COLUMN)
+        }
     }
 
     companion object {
         private val TAG = Database::class.java.simpleName
-        private const val VERSION = 2
+        private const val VERSION = 3
         const val NAME = "heliboard.db"
         private var instance: Database? = null
         fun getInstance(context: Context): Database {
