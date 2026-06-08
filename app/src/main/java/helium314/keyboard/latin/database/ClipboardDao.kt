@@ -244,11 +244,11 @@ class ClipboardDao private constructor(private val db: Database) {
         db.writableDatabase.delete(TABLE, null, null)
     }
 
-    private fun cleanupFiles(prefs: SharedPreferences) {
+    fun cleanupFiles(prefs: SharedPreferences) {
         val files = clipFilesDir.listFiles()?.toMutableList() ?: return
         if (!prefs.getBoolean(Settings.PREF_CLIPBOARD_FILES, Defaults.PREF_CLIPBOARD_FILES)) {
             files.forEach { it.delete() }
-            cache.filter { it.filename != null }.forEach {
+            cache.filter { it.filename != null && !it.isPinned }.forEach {
                 cache.remove(it)
                 db.writableDatabase.delete(TABLE, "$COLUMN_ID = ${it.id}", null)
             }
