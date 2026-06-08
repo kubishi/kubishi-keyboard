@@ -187,7 +187,10 @@ fun createPreferencesSettings(context: Context) = listOf(
         SwitchPreference(it, Defaults.PREF_CLIPBOARD_HISTORY_PINNED_FIRST)
     },
     Setting(context, Settings.PREF_CLIPBOARD_FILES, R.string.clipboard_history_files) {
-        SwitchPreference(it, Defaults.PREF_CLIPBOARD_FILES)
+        val ctx = LocalContext.current
+        SwitchPreference(it, Defaults.PREF_CLIPBOARD_FILES) {
+            ClipboardDao.getInstance(ctx)?.cleanupFiles(ctx.prefs())
+        }
     },
     Setting(context, Settings.PREF_CLIPBOARD_FILES_SIZE, R.string.clipboard_history_max_file_size) { setting ->
         val ctx = LocalContext.current

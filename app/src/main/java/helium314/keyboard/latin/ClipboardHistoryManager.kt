@@ -171,7 +171,6 @@ class ClipboardHistoryManager(
         // maybe no need to create a new view
         // but a cache has to consider a few possible changes, so better don't implement without need
         clipboardSuggestionView = null
-        Log.e("clipboard", "something")
 
         // get the content, or return null
         if (!latinIME.mSettings.current.mSuggestClipboardContent) return null
@@ -227,6 +226,7 @@ class ClipboardHistoryManager(
 
     companion object {
         private val TAG = "ClipboardHistoryManager"
+        // avoid showing the current suggestion because it has been dismissed or pasted
         private var dontShowCurrentSuggestion: Boolean = false
         const val RECENT_TIME_MILLIS = 3 * 60 * 1000L // 3 minutes (for clipboard suggestions)
 
@@ -238,7 +238,7 @@ class ClipboardHistoryManager(
                 val cursor = context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null)
                 if (cursor?.moveToFirst() != true) return false
                 val size = cursor.getLong(0)
-                return size <= maxSize
+                return size <= maxSize * 1000000 // maxSize is megabytes
             } catch (e: Exception) {
                 Log.w(TAG, "error checking clip size", e)
                 // happens with SecurityException: Permission Denial, so returning true doesn't make sense

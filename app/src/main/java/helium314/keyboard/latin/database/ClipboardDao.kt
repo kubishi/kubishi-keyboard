@@ -111,7 +111,7 @@ class ClipboardDao private constructor(private val db: Database) {
 
     // keep pinned and the first non-pinned, others can be deleted
     private fun deleteIfSizeExceeded(prefs: SharedPreferences) {
-        val sizeLimit = prefs.getInt(Settings.PREF_CLIPBOARD_FILES_SIZE, Defaults.PREF_CLIPBOARD_FILES_SIZE)
+        val sizeLimit = prefs.getInt(Settings.PREF_CLIPBOARD_FILES_SIZE, Defaults.PREF_CLIPBOARD_FILES_SIZE) * 1000000
         var size = 0L
         var keepMin = 1
         val toRemove = mutableListOf<ClipboardHistoryEntry>()
@@ -127,8 +127,10 @@ class ClipboardDao private constructor(private val db: Database) {
             }
         }
         if (toRemove.isEmpty()) return
+        Log.i(TAG, "deleting ${toRemove.size} items because size limit is exceeded")
         cache.removeAll(toRemove)
         db.writableDatabase.delete(TABLE, "$COLUMN_ID IN (${toRemove.joinToString(",") { it.id.toString() }})", null)
+        toRemove.forEach { File(clipFilesDir, it.filename!!).delete() }
     }
 
     private fun insertNewEntry(timestamp: Long, pinned: Boolean, text: String) {
@@ -245,24 +247,26 @@ class ClipboardDao private constructor(private val db: Database) {
     }
 
     fun cleanupFiles(prefs: SharedPreferences) {
-        val files = clipFilesDir.listFiles()?.toMutableList() ?: return
         if (!prefs.getBoolean(Settings.PREF_CLIPBOARD_FILES, Defaults.PREF_CLIPBOARD_FILES)) {
-            files.forEach { it.delete() }
             cache.filter { it.filename != null && !it.isPinned }.forEach {
                 cache.remove(it)
                 db.writableDatabase.delete(TABLE, "$COLUMN_ID = ${it.id}", null)
+                File(clipFilesDir, it.filename!!).delete()
             }
             return
         }
 
+        val files = clipFilesDir.listFiles()?.toMutableList() ?: return
         val fnames = files.mapTo(HashSet()) { it.name }
         val entries = cache.filter { it.filename != null }
         val enames = entries.mapTo(HashSet()) { it.filename }
 
         val filesToRemove = files.filter { it.name !in enames }
         val entriesToRemove = entries.filter { it.filename!! !in fnames }
-        if (filesToRemove.isEmpty() && entriesToRemove.isEmpty())
+        if (filesToRemove.isEmpty() && entriesToRemove.isEmpty()) {
+            deleteIfSizeExceeded(prefs)
             return
+        }
 
         Log.w(TAG, "deleting ${filesToRemove.size} files and ${entriesToRemove.size} clipboard entries")
         filesToRemove.forEach { it.delete() }
