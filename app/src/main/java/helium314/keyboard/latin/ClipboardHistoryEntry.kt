@@ -2,16 +2,17 @@
 
 package helium314.keyboard.latin
 
+import android.annotation.SuppressLint
 import android.content.ClipDescription
 import android.content.Context
 import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
 import android.os.Build
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.content.FileProvider
 import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.Log
-import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import helium314.keyboard.latin.database.ClipboardDao
 import java.io.File
@@ -42,22 +43,32 @@ class ClipboardHistoryEntry(
         File(ClipboardDao.clipFilesDir, it)
     ) }
 
-    fun getImageAndDescription(context: Context): Pair<Drawable?, String> {
-        if (mimeTypes == null || filename == null) return null to "" // should never happen
+    @SuppressLint("SetTextI18n")
+    fun setImageAndDescription(imageView: ImageView, textView: TextView) {
+        if (mimeTypes == null || filename == null) return // should never happen
         try {
             val path = File(ClipboardDao.clipFilesDir, filename).absolutePath
             // looks like decoded size is adjusted automatically to fit screen
-            return BitmapFactory.decodeFile(path).toDrawable(context.resources) to ""
+            val bitmap = BitmapFactory.decodeFile(path)
+            if (bitmap != null) {
+                imageView.setImageBitmap(bitmap)
+                textView.text = null
+                return
+            }
         } catch (e: Exception) {
             Log.w("ClipboardHistoryEntry", "could not load image for clip $id", e)
         }
+        val description = if (text.isNullOrBlank()) ""
+            else "\n" + textView.context.getString(R.string.item_description, text)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val info = context.contentResolver.getTypeInfo(mimeTypes[0])
-            val drawable = info.icon.loadDrawable(context)
-            if (drawable != null)
-                Settings.getValues().mColors.setColor(drawable, ColorType.EMOJI_CATEGORY) // todo: colorType?
-            return drawable to (info.label.toString() + if (text.isNullOrBlank()) "" else "\n$text")
+            val info = imageView.context.contentResolver.getTypeInfo(mimeTypes[0])
+            info.icon.setTint(Settings.getValues().mColors.get(ColorType.EMOJI_CATEGORY))
+            imageView.setImageIcon(info.icon)
+            textView.text = textView.context.getString(R.string.item_type, info.label.toString()) + description
+            return
         }
-        return null to mimeTypes.first() + if (text.isNullOrBlank()) "" else "\n$text"
+        imageView.setImageResource(R.drawable.ic_dictionary)
+        Settings.getValues().mColors.setColor(imageView, ColorType.EMOJI_CATEGORY)
+        textView.text = textView.context.getString(R.string.item_type, mimeTypes.first()) + description
     }
 }

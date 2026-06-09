@@ -81,15 +81,13 @@ class ClipboardAdapter(
             if (historyEntry == null) return
             itemView.tag = historyEntry.id
             if (historyEntry.filename != null) {
-                val (image, description) = historyEntry.getImageAndDescription(contentImageView.context)
-                contentImageView.setImageDrawable(image)
-                contentTextView.text = description
+                historyEntry.setImageAndDescription(contentImageView, contentTextView)
             } else {
                 contentTextView.text = historyEntry.text?.take(1000) // truncate displayed text for performance reasons
             }
             pinnedIconView.visibility = if (historyEntry.isPinned) View.VISIBLE else View.GONE
             contentImageView.visibility = if (historyEntry.filename != null) View.VISIBLE else View.GONE
-            contentTextView.visibility = if (contentTextView.text.isNullOrBlank()) View.GONE else View.VISIBLE
+            contentTextView.visibility = if (contentTextView.text != null) View.VISIBLE else View.GONE
         }
 
         @SuppressLint("ClickableViewAccessibility")

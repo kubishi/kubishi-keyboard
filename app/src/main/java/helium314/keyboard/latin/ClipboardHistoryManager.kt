@@ -77,7 +77,6 @@ class ClipboardHistoryManager(
         val timeStamp = ClipboardManagerCompat.getClipTimestamp(clipData)
 
         // todo
-        //  test backup / restore
         //  inline clip with view (PR 2312)
         if (description.hasMimeType("text/*")) {
             val content = clipItem.coerceToText(latinIME)
