@@ -43,6 +43,7 @@ class ClipboardHistoryEntry(
         File(ClipboardDao.clipFilesDir, it)
     ) }
 
+    // todo: if slow we could decode images it in a coroutine, or use cached preview images
     @SuppressLint("SetTextI18n")
     fun setImageAndDescription(imageView: ImageView, textView: TextView) {
         if (mimeTypes == null || filename == null) return // should never happen
