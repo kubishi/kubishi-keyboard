@@ -130,7 +130,7 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
         val editorMimeTypes = EditorInfoCompat.getContentMimeTypes(editorInfo)
         if (editorMimeTypes.any { content.description.hasMimeType(it) }) {
             if (connection.commitContent(content, editorInfo)) return
-        } else if (editorMimeTypes.isEmpty()) {
+        } else if (editorMimeTypes.isEmpty()) { // make the fallback optional?
             latinIME.clipboardHistoryManager.pasteWithoutChangingClips(content)
         }
     }

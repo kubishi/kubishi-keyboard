@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import helium314.keyboard.keyboard.KeyboardTypeface
 import helium314.keyboard.compat.ClipboardManagerCompat
 import helium314.keyboard.event.Event
@@ -76,8 +77,6 @@ class ClipboardHistoryManager(
         val description = clipData.description ?: return
         val timeStamp = ClipboardManagerCompat.getClipTimestamp(clipData)
 
-        // todo
-        //  inline clip with view (PR 2312)
         if (description.hasMimeType("text/*")) {
             val content = clipItem.coerceToText(latinIME)
             if (TextUtils.isEmpty(content)) return
@@ -178,28 +177,50 @@ class ClipboardHistoryManager(
         if (dontShowCurrentSuggestion) return null
         if (parent == null) return null
         val clipData = clipboardManager.primaryClip ?: return null
-        if (clipData.itemCount == 0 || clipData.description?.hasMimeType("text/*") == false) return null
+        if (clipData.itemCount == 0) return null
         val clipItem = clipData.getItemAt(0) ?: return null
+        val hasText = clipData.description?.hasMimeType("text/*") == true
+        val hasImage = clipData.description?.hasMimeType("image/*") == true && clipItem.uri != null
+        if (!hasText && !hasImage) return null
         val timeStamp = ClipboardManagerCompat.getClipTimestamp(clipData)
         if (System.currentTimeMillis() - timeStamp > RECENT_TIME_MILLIS) return null
         val content = clipItem.coerceToText(latinIME)
-        if (TextUtils.isEmpty(content)) return null
-        val inputType = editorInfo?.inputType ?: InputType.TYPE_NULL
-        if (InputTypeUtils.isNumberInputType(inputType) && !content.isValidNumber()) return null
 
         // create the view
         val binding = ClipboardSuggestionBinding.inflate(LayoutInflater.from(latinIME), parent, false)
         val textView = binding.clipboardSuggestionText
-        KeyboardTypeface.applyToTextView(textView)
-        textView.text = (if (isClipSensitive(inputType)) "*".repeat(content.length.coerceAtMost(200)) else content)
         val clipIcon = latinIME.mKeyboardSwitcher.keyboard.mIconsSet.getIconDrawable(ToolbarKey.PASTE.name.lowercase())
         textView.setCompoundDrawablesRelativeWithIntrinsicBounds(clipIcon, null, null, null)
-        textView.setOnClickListener {
+        if (hasText) {
+            if (TextUtils.isEmpty(content)) return null
+            val inputType = editorInfo?.inputType ?: InputType.TYPE_NULL
+            if (InputTypeUtils.isNumberInputType(inputType) && !content.isValidNumber()) return null
+            KeyboardTypeface.applyToTextView(textView)
+            textView.text = (if (isClipSensitive(inputType)) "*".repeat(content.length.coerceAtMost(200)) else content)
+        }
+        val onClickListener = View.OnClickListener {
             dontShowCurrentSuggestion = true
-            latinIME.onTextInput(content.toString())
+            if (hasText) latinIME.onTextInput(content.toString())
+            else latinIME.onEvent(Event.createSoftwareKeypressEvent(KeyCode.CLIPBOARD_PASTE, 0,
+                Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, false))
             AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, it, HapticEvent.KEY_PRESS)
             binding.root.isGone = true
         }
+        textView.setOnClickListener(onClickListener)
+
+        if (hasImage) {
+            val imageView = binding.clipboardSuggestionImage
+            imageView.isVisible = true
+            try {
+                imageView.setImageURI(clipItem.uri)
+            } catch (e: Exception) {
+                Log.w(TAG, "error setting clipboard image", e)
+                // happens with SecurityException: Permission Denial
+                return null
+            }
+            imageView.setOnClickListener(onClickListener)
+        }
+
         val closeButton = binding.clipboardSuggestionClose
         closeButton.setImageDrawable(latinIME.mKeyboardSwitcher.keyboard.mIconsSet.getIconDrawable(ToolbarKey.CLOSE_HISTORY.name.lowercase()))
         closeButton.setOnClickListener { removeClipboardSuggestion() }
