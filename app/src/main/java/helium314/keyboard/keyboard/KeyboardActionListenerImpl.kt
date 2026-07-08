@@ -313,6 +313,8 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
                 // some apps don't return any text via input connection, and the cursor can't be moved
                 // we fall back to virtually pressing the left/right key one or more times instead
                 repeat(-steps) {
+                    if (text.isNotEmpty())
+                        inputLogic.nextUpdateIsMove = true
                     onCodeInput(if (rtl) KeyCode.ARROW_RIGHT else KeyCode.ARROW_LEFT, Constants.NOT_A_COORDINATE,
                         Constants.NOT_A_COORDINATE, false)
                 }
@@ -329,6 +331,8 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
                 // some apps don't return any text via input connection, and the cursor can't be moved
                 // we fall back to virtually pressing the left/right key one or more times instead
                 repeat(steps) {
+                    if (text.isNotEmpty())
+                        inputLogic.nextUpdateIsMove = true
                     onCodeInput(if (rtl) KeyCode.ARROW_LEFT else KeyCode.ARROW_RIGHT, Constants.NOT_A_COORDINATE,
                         Constants.NOT_A_COORDINATE, false)
                 }
@@ -339,6 +343,7 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
             }
             gestureMoveForwardHaptics(text.isNotEmpty())
         }
+        inputLogic.nextUpdateIsMove = true
 
         // the shortcut below causes issues due to horrible handling of text fields by Firefox and forks
         // issues:

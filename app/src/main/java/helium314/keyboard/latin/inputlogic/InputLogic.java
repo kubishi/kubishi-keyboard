@@ -374,8 +374,13 @@ public final class InputLogic {
      * @param settingsValues the current values of the settings.
      * @return whether the cursor has moved as a result of user interaction.
      */
+    public boolean nextUpdateIsMove = false;
     public boolean onUpdateSelection(final int oldSelStart, final int oldSelEnd, final int newSelStart,
              final int newSelEnd, final int composingSpanStart, final int composingSpanEnd, final SettingsValues settingsValues) {
+        if (nextUpdateIsMove) {
+            nextUpdateIsMove = false;
+            return true;
+        }
         if (mConnection.isBelatedExpectedUpdate(oldSelStart, newSelStart, oldSelEnd, newSelEnd, composingSpanStart, composingSpanEnd)) {
             return false;
         }
